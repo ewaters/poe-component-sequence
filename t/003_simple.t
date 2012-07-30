@@ -11,7 +11,12 @@ sequence_test "Return values and passing context" => sub {
 	my $sequence = shift;
 
 	$sequence->add_action(sub {
+		return 68;
+	});
+
+	$sequence->add_action(sub {
 		my $self = shift;
+		is $self->result, 68, "Return value of previous action is stored in result()";
 		$self->heap_set(number => 42);
 	});
 
@@ -19,18 +24,20 @@ sequence_test "Return values and passing context" => sub {
 		my $self = shift;
 		is $self->heap_index('number'), 42, "Number passed from one action to another following";
 		$self->finished( "Magic value" );
+		return "last action return";
 	});
 
 	$sequence->add_callback(sub {
 		my ($self, $result) = @_;
 		is $result, "Magic value", "The value pased to finished() inside an action is passed to the callback";
+		is $self->result, "last action return", "result() still contains the return value of the last action";
 	});
 
 	$sequence->add_callback(sub {
 		my ($self, $result) = @_;
 		is $result, "Magic value", "Each callback receives the same finished() value";
 	});
-}, tests => 3;
+}, tests => 5;
 
 sequence_test "Error and finally callbacks" => sub {
 	my $sequence = shift;
@@ -109,6 +116,35 @@ sequence_test "Chained create style" => sub {
 			is $touch_points{callback}, 1, "Called one callback";
 		});
 	return $sequence;
+}, tests => 2;
+
+sequence_test "Parameterized new() create style" => sub {
+	my $sequence = shift;
+	my %touch_points;
+
+	# Because of the nature of the testing framework, which evaluates success of the test
+	# in a 'finally' callback, we can't perform tests in our add_finally_callback() in 
+	# new() args here since the evaluation (in MyTests) will happen before our add_finally_callback
+	# below.  To deal with this, let's create a sub sequence.
+	my $subseq = POE::Component::Sequence->new(
+		{
+			add_callback => sub { $touch_points{callback}++ },
+			add_finally_callback => sub {
+				is $touch_points{action}, 2, "Called two actions";
+				is $touch_points{callback}, 1, "Called one callback";
+			},
+		},
+		sub { $touch_points{action}++ },
+		sub { $touch_points{action}++ },
+	);
+
+	$sequence->add_action(sub {
+		my $self = shift;
+		$self->pause;
+		$subseq->add_finally_callback(sub { $self->resume });
+		$subseq->run();
+	});
+
 }, tests => 2;
 
 run_tests;

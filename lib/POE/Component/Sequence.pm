@@ -88,7 +88,7 @@ Have 'login_callback' publish to some sort of event watcher (PubSub) that it had
 
 The first two mechanisms are cludgy, and don't allow for the potential for more than one thing being done upon completion of the task.  While the third idea, the PubSub announce, is a good one, it wouldn't (without cludgly coding) contain contextual information that we wanted carried through the process at the outset.  Additionally, if the login process failed at some point in the process, keeping track of who wants to be notified about this failure becomes very difficult to manage.
 
-The elegant solution, in my opinion, was to encapsulate all the actions necessary for a process into a discreet sequence that can be paused/resumed, can have multiple callbacks, and carry with it a shared heap where I could store and retrieve data from, passing around as a reference to whomever wanted to access it.
+The elegant solution, in my opinion, was to encapsulate all the actions necessary for a process into a discrete sequence that can be paused/resumed, can have multiple callbacks, and carry with it a shared heap where I could store and retrieve data from, passing around as a reference to whomever wanted to access it.
 
 =back
 
@@ -96,7 +96,6 @@ The elegant solution, in my opinion, was to encapsulate all the actions necessar
 
 use strict;
 use warnings;
-use Data::Dumper;
 use POE;
 use Class::MethodMaker [
     array  => [qw(
@@ -122,7 +121,6 @@ use Class::MethodMaker [
 ];
 
 my $_session_count = 0;
-our $debug = 0;
 
 # Provide a globla attach point for plugins
 our @_plugin_handlers;
@@ -162,7 +160,6 @@ sub new {
     my $self = bless {}, $class;
 
     $self->alias(__PACKAGE__ . '_' . $_session_count++);
-    print "[" . $self->alias . "] new()\n" if $debug;
 
     POE::Session->create(
         object_states => [
@@ -293,9 +290,6 @@ sub add_action {
     else {
         push @$stack, [ $action ];
     }
-
-    #use Data::Dumper;
-    #print "After add_action, we have:\n" . Dumper({ actions => scalar $self->actions, active_action_path => scalar $self->active_action_path });
 
     return $self;
 }
@@ -437,7 +431,6 @@ Starts the sequence.  This is mandatory - if you never call C<run()>, the sequen
 
 sub run {
     my $self = shift;
-    print "[" . $self->alias . "] run()\n" if $debug;
 
     $self->running(1);
     $self->pause_state(0);
@@ -560,7 +553,6 @@ sub finished {
 sub finish {
     my ($self, @args) = @_[OBJECT, ARG0 .. $#_];
     return if $self->is_finished();
-    print "[" . $self->alias . "] finish()\n" if $debug;
     $self->is_finished(1);
 
     foreach my $callback ($self->callbacks) {
@@ -601,7 +593,6 @@ sub failed {
 
 sub fail {
     my ($self, @args) = @_[OBJECT, ARG0 .. $#_];
-    print "[" . $self->alias . "] fail()\n" if $debug;
     $self->is_error(1);
     $self->is_finished(1);
 
@@ -648,7 +639,6 @@ Walks through each 'finally' callback, passing ($sequence, @args) to each.
 
 sub finally {
     my ($self, $kernel, @args) = @_[OBJECT, KERNEL, ARG0 .. $#_];
-    print "[" . $self->alias . "] finally()\n" if $debug;
 
     foreach my $callback ($self->callbacks) {
         next unless $callback->{type} eq 'finally';
@@ -731,31 +721,26 @@ sub next {
 
         # Perform auto_pause
         if ($request->{options}{auto_pause}) {
-            print "[" . $self->alias . "] next(): auto_pause\n" if $debug;
             $self->pause();
         }
 
         # Iterate over handlers
         my $handled;
         foreach my $handler ($self->handlers) {
-            print "[" . $self->alias . "] next(): trying handler\n" if $debug;
 
             my $handler_result;
             eval {
                 $handler_result = &$handler($self, $request);
             };
             if ($@) {
-                print "[" . $self->alias . "] next(): handler died $@\n" if $debug;
                 $self->failed($@);
                 return;
             }
             
             if ($handler_result->{deferred}) {
-                print "[" . $self->alias . "] next(): handler deferred\n" if $debug;
                 next;
             }
             elsif ($handler_result->{skip}) {
-                print "[" . $self->alias . "] next(): handler skipped\n" if $debug;
                 # Handler wants to skip to the next action
                 # Make sure we're unpaused
                 $self->pause_state(0);
@@ -763,7 +748,6 @@ sub next {
                 last;
             }
             else {
-                print "[" . $self->alias . "] next(): handler succeeded\n" if $debug;
                 $self->result($handler_result->{value});
                 $handled = 1;
                 last;
@@ -777,23 +761,19 @@ sub next {
         # as the handler may have performed the auto_resume, negating my need to
         # do so.
         if ($request->{options}{auto_resume} && $self->pause_state) {
-            print "[" . $self->alias . "] next(): auto_resume\n" if $debug;
             $self->pause_state( $self->pause_state - 1 );
         }
     }
 
     if ($self->pause_state) {
-        print "[" . $self->alias . "] next(): paused after action\n" if $debug;
         return;
     }
 
     # Pull the next action, but don't modify my path (a look ahead, so to speak)
     if (! defined _next_recurse([ undef, $self->actions ], [ $self->active_action_path ])) {
-        print "[" . $self->alias . "] next(): end of actions; finishing\n" if $debug;
         $poe_kernel->post($self->alias, 'finish');
     }
     else {
-        print "[" . $self->alias . "] next(): more actions; next\n" if $debug;
         $poe_kernel->post($self->alias, 'next');
     }
 }
@@ -868,7 +848,6 @@ sub default_handler {
     my ($self, $request) = @_;
 
     my $action = $request->{action};
-    print "[" . $self->alias . "] default_handler($action)\n" if $debug;
 
     if (! defined $action || ! ref $action) {
         return { deferred => 1 };
