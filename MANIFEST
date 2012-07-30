@@ -1,0 +1,9 @@
+Build.PL
+lib/POE/Component/Sequence.pm
+lib/POE/Component/Sequence/Nested.pm
+MANIFEST			This list of files
+t/001_load.t
+t/002_methods.t
+t/003_simple.t
+t/004_pause_and_delays.t
+t/lib/MyTests.pm

@@ -40,18 +40,19 @@ sub sequence_test ($;&;@) {
 	my @caller = caller();
 
 	$test_count += $args{tests} if $args{tests};
+	$test_sequence ||= POE::Component::Sequence->new();
 
 	# Create a sequence and pass it to the code for setup.  Set up a series of tests
 	# such that we wait for each test to complete before running the next one
 
 	my $test = POE::Component::Sequence->new();
-	my $return = $code->( $test );
-# 	if (! $return || ! blessed $return || ! $return->isa('POE::Component::Sequence')) {
-# 		print STDERR "\n# $description\n\n";
-# 		return;
-# 	}
+	my $return = $code->( $test, $test_sequence );
 
-	$test_sequence ||= POE::Component::Sequence->new();
+	# If the test created it's own sequence, it can return it and we'll work with that
+	if ($return && blessed $return && $return->isa('POE::Component::Sequence')) {
+		$test = $return;
+	}
+
 	$test_sequence->add_action(sub {
 		$test_sequence->pause;
 

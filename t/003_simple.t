@@ -109,6 +109,6 @@ sequence_test "Chained create style" => sub {
 			is $touch_points{callback}, 1, "Called one callback";
 		});
 	return $sequence;
-}, tests => 1;
+}, tests => 2;
 
 run_tests;
