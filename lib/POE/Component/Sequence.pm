@@ -894,6 +894,10 @@ No known bugs, but I'm sure you can find some.
 
 L<POE>
 
+=head1 DEVELOPMENT
+
+This module is being developed via a git repository publicly available at L<http://github.com/ewaters/poe-component-sequence>.  I encourage anyone who is interested to fork my code and contribute bug fixes or new features, or just have fun and be creative.
+
 =head1 COPYRIGHT
 
 Copyright (c) 2008 Eric Waters and XMission LLC (http://www.xmission.com/).
