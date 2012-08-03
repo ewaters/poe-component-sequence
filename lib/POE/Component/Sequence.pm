@@ -120,6 +120,8 @@ use Class::MethodMaker [
     )],
 ];
 
+our $VERSION = '0.01';
+
 my $_session_count = 0;
 
 # Provide a globla attach point for plugins
