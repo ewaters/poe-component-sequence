@@ -695,10 +695,8 @@ sub _next_recurse {
     return $stack->[$stack_index + 1][0];
 }
 
-sub next {
-    my $self = $_[OBJECT];
-
-    return if $self->pause_state || $self->is_finished;
+sub get_next_action {
+	my $self = shift;
 
     ## Find the next action to execute
 
@@ -713,6 +711,16 @@ sub next {
 
     # Store the newly changed action path
     $self->active_action_path(@active_action_path);
+
+	return $action;
+}
+
+sub next {
+    my $self = $_[OBJECT];
+
+    return if $self->pause_state || $self->is_finished;
+
+	my $action = $self->get_next_action();
 
     if (defined $action) {
         # Create request to pass to handlers
