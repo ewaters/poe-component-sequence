@@ -8,8 +8,10 @@ t/003_simple.t
 t/004_pause_and_delays.t
 t/005_nested_actions.t
 t/006_custom_handler.t
+t/007_synchronous.t
 t/lib/MyTests.pm
 Makefile.PL
 README
+CHANGES
 META.yml
 META.json

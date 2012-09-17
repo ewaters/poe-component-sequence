@@ -34,7 +34,7 @@
    "provides" : {
       "POE::Component::Sequence" : {
          "file" : "lib/POE/Component/Sequence.pm",
-         "version" : "0.01"
+         "version" : "0.02"
       },
       "POE::Component::Sequence::Nested" : {
          "file" : "lib/POE/Component/Sequence/Nested.pm",
@@ -53,5 +53,5 @@
          "url" : "http://github.com/ewaters/poe-component-sequence"
       }
    },
-   "version" : "0.01"
+   "version" : "0.02"
 }
